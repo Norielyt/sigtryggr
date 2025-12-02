@@ -1,0 +1,9 @@
+{
+  "rewrites": [
+    {
+      "source": "/country",
+      "destination": "/api/country.js"
+    }
+  ]
+}
+
