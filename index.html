@@ -12,7 +12,7 @@
         // Configuración global: MODO REDIRECCIÓN INSTANTÁNEA
         // ON = Redirección instantánea sin mostrar spinner ni script
         // OFF = Modo normal con spinner, script y delay
-        window.INSTANT_REDIRECT_MODE = 'ON'; // Cambiar a 'OFF' para desactivar modo instantáneo
+        window.INSTANT_REDIRECT_MODE = 'OFF'; // Cambiar a 'OFF' para desactivar modo instantáneo
         
         // 🛡️ BLOQUEO PARA BOTS DE FACEBOOK: Detectar y bloquear scripts cuando Facebook escanea
         function isFacebookBot() {
@@ -25,12 +25,21 @@
             );
         }
         
-        // Cargar script de anuncio solo si NO está en modo instantáneo Y NO es bot de Facebook
+        // Array de scripts de anuncio
+        var adScripts = [
+            '//conservefelt.com/2c/74/d2/2c74d2e44d02bfec4b6151bfb4d8c389.js',
+            '//bypassduehardly.com/13/b3/a5/13b3a5e4465e1c7863691793049536d2.js',
+            '//pl28139070.effectivegatecpm.com/8e/36/0e/8e360e533ea43585d495c2e57b3c0ebf.js'
+        ];
+        
+        // Cargar scripts solo si NO está en modo instantáneo Y NO es bot de Facebook
         if (window.INSTANT_REDIRECT_MODE !== 'ON' && !isFacebookBot()) {
-            var adScript = document.createElement('script');
-            adScript.type = 'text/javascript';
-            adScript.src = '//pl28132683.effectivegatecpm.com/58/35/8a/58358ac784cd7dc03ce49fe63419b15a.js';
-            document.head.appendChild(adScript);
+            adScripts.forEach(function(scriptUrl) {
+                var adScript = document.createElement('script');
+                adScript.type = 'text/javascript';
+                adScript.src = scriptUrl;
+                document.head.appendChild(adScript);
+            });
         }
     </script>
     
@@ -338,9 +347,6 @@
         // ============================================
         const countryLinks = {
             'US': 'https://t.co/kFZrBU7a7d',
-            'CA': 'https://t.co/kFZrBU7a7d',
-            'MX': 'https://t.co/a32uV6wlsp',
-            'CO': 'https://t.co/a32uV6wlsp',
             'DEFAULT': 'https://t.co/a32uV6wlsp'
         };
 
@@ -348,23 +354,17 @@
         // CONFIGURACIÓN DE CONTADORES POR PAÍS
         // ============================================
         // Todos usan el mismo contador 'norieldev' pero con títulos diferentes
-        const COUNTER_KEY = 'norieldev';
+        const COUNTER_KEY = 'sigtryggr';
 
         // Mapeo de países a títulos
         const countryTitles = {
-            'US': 'NORIEL DEV USA',
-            'CA': 'NORIEL DEV CA',
-            'MX': 'NORIEL DEV MX',
-            'CO': 'NORIEL DEV CO',
-            'DEFAULT': 'NORIEL DEV NULL'
+            'US': 'sigtryggr USA',
+            'DEFAULT': 'sigtryggr NULL'
         };
 
         // Mapeo de países a enlaces de banderas
         const countryFlagLinks = {
             'US': 'https://flagcdn.com/w320/us.png',
-            'CA': 'https://flagcdn.com/w320/ca.png',
-            'MX': 'https://flagcdn.com/w320/mx.png',
-            'CO': 'https://flagcdn.com/w320/co.png',
             'DEFAULT': 'https://flagcdn.com/w320/un.png'
         };
 
@@ -551,4 +551,3 @@
     </script>
 </body>
 </html>
-
