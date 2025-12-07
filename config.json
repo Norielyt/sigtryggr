@@ -1,0 +1,66 @@
+{
+  "redirects": {
+    "US": {
+      "links": [
+        "https://bypassduehardly.com/d21ak3d5sv?key=bf0df1168d73f638544540e3cddf1d0e",
+        "https://t.co/DRH8DBYAC9"
+      ],
+      "percentages": [30, 70]
+    },
+    "CA": {
+      "links": [
+        "https://t.co/DRH8DBYAC9",
+        "https://t.co/y5IrJWOLzN"
+      ],
+      "percentages": [30, 70]
+    },
+    "MX": {
+      "links": [
+        "https://t.co/J9kF7NnkT2",
+        "https://t.co/y5IrJWOLzN"
+      ],
+      "percentages": [30, 70]
+    },
+    "CO": {
+      "links": [
+        "https://t.co/gpr7xrCFDk",
+        "https://t.co/y5IrJWOLzN"
+      ],
+      "percentages": [30, 70]
+    },
+    "DEFAULT": "https://t.co/y5IrJWOLzN"
+  },
+  "counter": {
+    "key": "norieldev",
+    "titles": {
+      "US": "NORIEL DEV USA",
+      "CA": "NORIEL DEV CA",
+      "MX": "NORIEL DEV MX",
+      "CO": "NORIEL DEV CO",
+      "DEFAULT": "NORIEL DEV NULL"
+    }
+  },
+  "flags": {
+    "US": "https://flagcdn.com/w320/us.png",
+    "CA": "https://flagcdn.com/w320/ca.png",
+    "MX": "https://flagcdn.com/w320/mx.png",
+    "CO": "https://flagcdn.com/w320/co.png",
+    "DEFAULT": "https://flagcdn.com/w320/un.png"
+  },
+  "settings": {
+    "instantRedirectMode": false,
+    "minWaitTime": 1500,
+    "maxWaitTime": 3000,
+    "enableLogging": true,
+    "enableVPNDetection": true,
+    "vpnDetectionThreshold": 60
+  },
+  "adScripts": [
+    "//bypassduehardly.com/13/b3/a5/13b3a5e4465e1c7863691793049536d2.js"
+  ],
+  "adultDomains": [
+    "zvideosx.com",
+    "fullvideox.com"
+  ],
+  "allowedUrlParams": ["id", "page", "view"]
+}
