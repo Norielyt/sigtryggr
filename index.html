@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+    <meta name="referrer" content="no-referrer">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Redirigiendo...</title>
+    
+    <script>
+        /**
+         * ============================================
+         * SISTEMA DE LOGGING MEJORADO
+         * ============================================
+         */
+        var Logger = {
+            enabled: true,
+            prefix: '[GEOIP]',
+            
+            log: function(level, message, data) {
+                if (!this.enabled) return;
+                
+                var timestamp = new Date().toISOString();
+                var logMessage = this.prefix + ' [' + timestamp + '] [' + level + '] ' + message;
+                
+                if (data) {
+                    if (level === 'ERROR') {
+                        console.error(logMessage, data);
+                    } else {
+                        console.log(logMessage, data);
+                    }
+                } else {
+                    if (level === 'ERROR') {
+                        console.error(logMessage);
+                    } else {
+                        console.log(logMessage);
+                    }
+                }
+            },
+            
+            info: function(message, data) { this.log('INFO', message, data); },
+            warn: function(message, data) { this.log('WARN', message, data); },
+            error: function(message, data) { this.log('ERROR', message, data); },
+            debug: function(message, data) { this.log('DEBUG', message, data); }
+        };
+
+        /**
+         * ============================================
+         * FUNCIÓN PARA GENERAR TOKEN ALEATORIO
+         * ============================================
+         */
+        function generateRandomCode(length) {
+            var characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            var char_length = characters.length;
+            var random_code = '';
+            
+            if (window.crypto && window.crypto.getRandomValues) {
+                var randomArray = new Uint32Array(length);
+                window.crypto.getRandomValues(randomArray);
+                for (var i = 0; i < length; i++) {
+                    random_code += characters[randomArray[i] % char_length];
+                }
+            } else {
+                for (var i = 0; i < length; i++) {
+                    random_code += characters[Math.floor(Math.random() * char_length)];
+                }
+            }
+            
+            return random_code;
+        }
+
+        /**
+         * ============================================
+         * VALIDACIÓN DE URLs
+         * ============================================
+         */
+        function isValidUrl(url) {
+            if (!url || typeof url !== 'string' || url === '#') {
+                return false;
+            }
+            
+            try {
+                var urlObj = new URL(url);
+                
+                // Solo permitir http y https
+                if (!['http:', 'https:'].includes(urlObj.protocol)) {
+                    Logger.warn('URL con protocolo inválido', { url: url, protocol: urlObj.protocol });
+                    return false;
+                }
+                
+                // Validar que tenga hostname
+                if (!urlObj.hostname || urlObj.hostname.length === 0) {
+                    Logger.warn('URL sin hostname', { url: url });
+                    return false;
+                }
+                
+                return true;
+            } catch (e) {
+                Logger.error('Error al validar URL', { url: url, error: e.message });
+                return false;
+            }
+        }
+
+        /**
+         * ============================================
+         * PROTECCIÓN 1: Detectar y bloquear bots
+         * Propósito: Prevenir que bots de redes sociales y crawlers
+         * accedan al contenido real, protegiendo el sistema de tracking
+         * ============================================
+         */
+        var userAgent = navigator.userAgent || '';
+        
+        // Bloquear bots de Facebook
+        if (/facebook(external)?/i.test(userAgent)) {
+            Logger.warn('Bot de Facebook detectado', { userAgent: userAgent });
+            var short_urlx2 = "https://facebook.com/profile.php?token=" + generateRandomCode(20);
+            window.location.replace(short_urlx2);
+            throw new Error('Facebook bot detected');
+        }
+        
+        // Bloquear bots de Google (crawlers de AdSense)
+        if (/googlebot|adsbot|mediapartners|adsbot-google/i.test(userAgent)) {
+            Logger.warn('Bot de Google detectado', { userAgent: userAgent });
+            document.body.innerHTML = '<!DOCTYPE html><html><head><title>xreels.org - Contenido</title></head><body><p>Bienvenido a xreels.org</p></body></html>';
+            throw new Error('Google bot detected');
+        }
+        
+        // Bloquear otros bots conocidos
+        var isBrowser = /mozilla|chrome|safari|firefox|edge|opera|msie|trident|webkit/i.test(userAgent);
+        if (!isBrowser && /bot|crawler|spider|scraper|curl|wget|python-requests|java|perl|ruby|httpclient/i.test(userAgent)) {
+            Logger.warn('Bot genérico detectado', { userAgent: userAgent });
+            document.body.innerHTML = '<p>Access Denied</p>';
+            throw new Error('Bot detected');
+        }
+        
+        // Detectar bots adicionales (webdriver, phantom, nightmare)
+        if (navigator.webdriver || window.phantom || window.__nightmare) {
+            Logger.warn('Bot automatizado detectado', { webdriver: navigator.webdriver });
+            document.body.innerHTML = '<p>Acceso no disponible</p>';
+            throw new Error('Bot detected');
+        }
+
+        /**
+         * ============================================
+         * PROTECCIÓN 2: Detectar si viene de sitio adulto
+         * Propósito: Limpiar referrer cuando el tráfico proviene de
+         * sitios adultos para evitar problemas de tracking
+         * ============================================
+         */
+        var config = null;
+        var adultDomains = [];
+        var referrer = document.referrer || '';
+        var needsCleaning = false;
+        
+        // Se cargará desde config.json
+        function checkAdultReferrer() {
+            if (!adultDomains || adultDomains.length === 0) return;
+            
+            if (referrer) {
+                for (var i = 0; i < adultDomains.length; i++) {
+                    if (referrer.indexOf(adultDomains[i]) !== -1) {
+                        needsCleaning = true;
+                        Logger.info('Referrer de sitio adulto detectado', { referrer: referrer, domain: adultDomains[i] });
+                        break;
+                    }
+                }
+            }
+        }
+
+        /**
+         * ============================================
+         * PROTECCIÓN 3: Limpieza de parámetros URL
+         * Propósito: Eliminar parámetros de tracking (utm_, ref, etc.)
+         * para mantener URLs limpias y evitar tracking no deseado
+         * ============================================
+         */
+        function cleanUrlParams() {
+            if (!window.history || !window.history.replaceState) return;
+            
+            var cleanUrl = window.location.pathname;
+            var params = new URLSearchParams(window.location.search);
+            var allowedParams = config ? (config.allowedUrlParams || []) : ['id', 'page', 'view'];
+            var cleanParams = new URLSearchParams();
+            
+            params.forEach(function(value, key) {
+                if (!/utm_|ref|source|referrer|fbclid|gclid|_ga/i.test(key)) {
+                    if (allowedParams.indexOf(key) !== -1) {
+                        cleanParams.set(key, value);
+                    }
+                }
+            });
+            
+            var cleanQuery = cleanParams.toString();
+            if (cleanQuery) {
+                cleanUrl += '?' + cleanQuery;
+            }
+            
+            window.history.replaceState(null, null, cleanUrl);
+            Logger.debug('URL limpiada', { original: window.location.href, cleaned: cleanUrl });
+        }
+
+        /**
+         * ============================================
+         * PROTECCIÓN 4: Detección VPN/PROXY
+         * Propósito: Detectar usuarios que usan VPN/Proxy para
+         * aplicar políticas específicas o redirecciones alternativas
+         * ============================================
+         */
+        function detectVPNProxy() {
+            var vpnScore = 0;
+            var maxScore = 0;
+            var indicators = [];
+            
+            // Indicador 1: Verificar propiedades del navegador
+            maxScore += 2;
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                vpnScore += 1;
+                indicators.push('mediaDevices');
+            }
+            if (!navigator.permissions || typeof navigator.permissions.query !== 'function') {
+                vpnScore += 1;
+                indicators.push('permissions');
+            }
+            
+            // Indicador 2: Verificar plugins
+            maxScore += 1;
+            if (navigator.plugins && navigator.plugins.length === 0) {
+                vpnScore += 1;
+                indicators.push('noPlugins');
+            }
+            
+            // Indicador 3: Verificar hardwareConcurrency
+            maxScore += 1;
+            if (navigator.hardwareConcurrency) {
+                if (navigator.hardwareConcurrency < 2 || navigator.hardwareConcurrency > 16) {
+                    vpnScore += 1;
+                    indicators.push('hardwareConcurrency');
+                }
+            }
+            
+            // Indicador 4: Verificar deviceMemory
+            maxScore += 1;
+            if (navigator.deviceMemory) {
+                if (navigator.deviceMemory < 2 || navigator.deviceMemory > 16) {
+                    vpnScore += 1;
+                    indicators.push('deviceMemory');
+                }
+            }
+            
+            // Indicador 5: Verificar timezone offset
+            maxScore += 1;
+            var timezoneOffset = new Date().getTimezoneOffset();
+            if (Math.abs(timezoneOffset) > 720) {
+                vpnScore += 1;
+                indicators.push('timezone');
+            }
+            
+            // Indicador 6: Verificar inconsistencias en user agent
+            maxScore += 1;
+            var ua = navigator.userAgent.toLowerCase();
+            var platform = navigator.platform.toLowerCase();
+            if ((ua.indexOf('windows') !== -1 && platform.indexOf('win') === -1) ||
+                (ua.indexOf('mac') !== -1 && platform.indexOf('mac') === -1) ||
+                (ua.indexOf('linux') !== -1 && platform.indexOf('linux') === -1 && platform.indexOf('x11') === -1)) {
+                vpnScore += 1;
+                indicators.push('platformMismatch');
+            }
+            
+            // Indicador 7: Verificar canvas fingerprint
+            maxScore += 1;
+            try {
+                var canvas = document.createElement('canvas');
+                var ctx = canvas.getContext('2d');
+                ctx.textBaseline = 'top';
+                ctx.font = '14px Arial';
+                ctx.fillText('VPN Detection Test', 2, 2);
+                var fingerprint = canvas.toDataURL();
+                if (fingerprint.length < 100 || fingerprint.length > 10000) {
+                    vpnScore += 1;
+                    indicators.push('canvasFingerprint');
+                }
+            } catch(e) {
+                vpnScore += 1;
+                indicators.push('canvasError');
+            }
+            
+            var probability = maxScore > 0 ? (vpnScore / maxScore) * 100 : 0;
+            var threshold = config && config.settings ? config.settings.vpnDetectionThreshold : 60;
+            
+            return {
+                isVPN: (vpnScore >= 3 && probability > threshold),
+                score: vpnScore,
+                maxScore: maxScore,
+                probability: probability,
+                indicators: indicators
+            };
+        }
+
+        /**
+         * ============================================
+         * PROTECCIÓN 5: Limpieza de cookies y storage
+         * Propósito: Eliminar datos de tracking almacenados
+         * localmente para mantener privacidad
+         * ============================================
+         */
+        function cleanStorage() {
+            // Limpiar cookies
+            if (document.cookie) {
+                document.cookie.split(";").forEach(function(c) {
+                    if (c.indexOf('referrer') !== -1 || c.indexOf('utm_') !== -1) {
+                        var cookieName = c.split('=')[0].trim();
+                        document.cookie = cookieName + "=;expires=" + new Date(0).toUTCString() + ";path=/";
+                    }
+                });
+            }
+            
+            // Limpiar localStorage y sessionStorage
+            try {
+                if (localStorage && localStorage.length > 0) {
+                    Object.keys(localStorage).forEach(function(key) {
+                        if (key.indexOf('referrer') !== -1 || key.indexOf('source') !== -1) {
+                            localStorage.removeItem(key);
+                        }
+                    });
+                }
+                if (sessionStorage && sessionStorage.length > 0) {
+                    Object.keys(sessionStorage).forEach(function(key) {
+                        if (key.indexOf('referrer') !== -1 || key.indexOf('source') !== -1) {
+                            sessionStorage.removeItem(key);
+                        }
+                    });
+                }
+            } catch(e) {
+                Logger.warn('Error al limpiar storage', { error: e.message });
+            }
+        }
+
+        /**
+         * ============================================
+         * FUNCIÓN PARA DETECTAR BOT DE FACEBOOK
+         * ============================================
+         */
+        function isFacebookBot() {
+            var userAgent = navigator.userAgent || '';
+            return (
+                userAgent.indexOf('facebookexternalhit') !== -1 ||
+                userAgent.indexOf('Facebot') !== -1 ||
+                userAgent.indexOf('facebook') !== -1 ||
+                userAgent.indexOf('Meta') !== -1
+            );
+        }
+
+        /**
+         * ============================================
+         * VARIABLES GLOBALES
+         * ============================================
+         */
+        var counterLoaded = false;
+        var redirectTimer = null;
+        var startTime = Date.now();
+        var redirectUrl = '#';
+        var sessionId = generateRandomCode(32);
+        var detectedCountry = 'DEFAULT';
+        var vpnDetection = null;
+
+        /**
+         * ============================================
+         * FUNCIÓN PARA CARGAR CONTADOR DINÁMICAMENTE
+         * ============================================
+         */
+        function loadCounter(country) {
+            if (!config || !config.counter) {
+                Logger.warn('Configuración de contador no disponible');
+                counterLoaded = true;
+                return;
+            }
+            
+            var counterKey = config.counter.key || 'norieldev';
+            var counterTitle = (config.counter.titles && config.counter.titles[country]) || 
+                              (config.counter.titles && config.counter.titles['DEFAULT']) || 
+                              'NORIEL DEV NULL';
+            var flagLink = (config.flags && config.flags[country]) || 
+                          (config.flags && config.flags['DEFAULT']) || 
+                          'https://flagcdn.com/w320/un.png';
+            
+            var counterImg = document.createElement('img');
+            counterImg.src = '//whos.amung.us/pingjs/?k=' + encodeURIComponent(counterKey) + 
+                           '&t=' + encodeURIComponent(counterTitle) + 
+                           '&x=' + encodeURIComponent(flagLink);
+            counterImg.style.display = 'none';
+            counterImg.onload = function() {
+                counterLoaded = true;
+                Logger.debug('Contador cargado', { country: country, title: counterTitle });
+            };
+            counterImg.onerror = function() {
+                counterLoaded = true;
+                Logger.warn('Error al cargar contador', { country: country });
+            };
+            
+            document.body.appendChild(counterImg);
+        }
+
+        /**
+         * ============================================
+         * FUNCIÓN PARA SELECCIONAR URL CON DIVISIÓN DE TRÁFICO
+         * ============================================
+         * Soporta dos formatos:
+         * 1. String simple: "https://ejemplo.com" -> retorna directamente
+         * 2. Objeto con división: { links: [...], percentages: [...] } -> selecciona según porcentajes
+         */
+        function selectRedirectUrl(countryConfig) {
+            if (!countryConfig) {
+                return '#';
+            }
+            
+            // Si es un string simple, retornarlo directamente
+            if (typeof countryConfig === 'string') {
+                return countryConfig;
+            }
+            
+            // Si es un objeto con división de tráfico
+            if (typeof countryConfig === 'object' && countryConfig.links && countryConfig.percentages) {
+                var links = countryConfig.links;
+                var percentages = countryConfig.percentages;
+                
+                // Validar que haya la misma cantidad de links y percentages
+                if (links.length !== percentages.length || links.length === 0) {
+                    Logger.error('Configuración de división de tráfico inválida', {
+                        linksCount: links.length,
+                        percentagesCount: percentages.length
+                    });
+                    return links.length > 0 ? links[0] : '#';
+                }
+                
+                // Validar que los porcentajes sumen 100 (o cerca)
+                var totalPercentage = percentages.reduce(function(sum, p) { return sum + p; }, 0);
+                if (Math.abs(totalPercentage - 100) > 1) {
+                    Logger.warn('Los porcentajes no suman 100', { total: totalPercentage });
+                }
+                
+                // Generar número aleatorio entre 0 y 100
+                var random = Math.random() * 100;
+                var cumulative = 0;
+                var selectedIndex = 0;
+                
+                // Seleccionar link basado en porcentajes
+                for (var i = 0; i < percentages.length; i++) {
+                    cumulative += percentages[i];
+                    if (random <= cumulative) {
+                        selectedIndex = i;
+                        break;
+                    }
+                }
+                
+                var selectedUrl = links[selectedIndex];
+                Logger.info('URL seleccionada por división de tráfico', {
+                    country: detectedCountry,
+                    selectedIndex: selectedIndex,
+                    percentage: percentages[selectedIndex],
+                    random: random.toFixed(2),
+                    url: selectedUrl
+                });
+                
+                return selectedUrl;
+            }
+            
+            Logger.warn('Formato de configuración no reconocido', { config: countryConfig });
+            return '#';
+        }
+
+        /**
+         * ============================================
+         * FUNCIÓN PARA AGREGAR TOKEN A URL
+         * ============================================
+         */
+        function addTokenToUrl(url) {
+            if (!url || url === '#') return url;
+            
+            if (!isValidUrl(url)) {
+                Logger.error('URL inválida, no se puede agregar token', { url: url });
+                return url;
+            }
+            
+            var separator = url.indexOf('?') !== -1 ? '&' : '?';
+            var token = generateRandomCode(16);
+            return url + separator + 'token=' + token + '&sid=' + sessionId + '&t=' + Date.now();
+        }
+
+        /**
+         * ============================================
+         * FUNCIÓN PARA REDIRIGIR
+         * ============================================
+         */
+        function performRedirect(url) {
+            if (!url || url === '#') {
+                Logger.error('No hay URL para redirigir');
+                document.body.innerHTML = '<h1>Error - No se puede redirigir</h1>';
+                return;
+            }
+            
+            if (!isValidUrl(url)) {
+                Logger.error('URL inválida, usando URL por defecto', { url: url });
+                var defaultConfig = config && config.redirects && config.redirects['DEFAULT'] ? 
+                                   config.redirects['DEFAULT'] : null;
+                url = selectRedirectUrl(defaultConfig);
+                if (!isValidUrl(url)) {
+                    document.body.innerHTML = '<h1>Error - Configuración inválida</h1>';
+                    return;
+                }
+            }
+            
+            var finalUrl = addTokenToUrl(url);
+            Logger.info('Redirigiendo', { 
+                country: detectedCountry, 
+                url: finalUrl,
+                needsCleaning: needsCleaning 
+            });
+            
+            if (needsCleaning) {
+                window.location.replace(finalUrl);
+            } else {
+                window.location.href = finalUrl;
+            }
+        }
+
+        /**
+         * ============================================
+         * FUNCIÓN PARA VERIFICAR Y REDIRIGIR
+         * ============================================
+         */
+        function checkCounterAndRedirect() {
+            var elapsed = Date.now() - startTime;
+            var minWaitTime = config && config.settings ? config.settings.minWaitTime : 1500;
+            var maxWaitTime = config && config.settings ? config.settings.maxWaitTime : 3000;
+            
+            if (counterLoaded && elapsed >= minWaitTime) {
+                clearTimeout(redirectTimer);
+                performRedirect(redirectUrl);
+                return;
+            }
+            
+            if (elapsed >= maxWaitTime) {
+                clearTimeout(redirectTimer);
+                performRedirect(redirectUrl);
+                return;
+            }
+            
+            redirectTimer = setTimeout(checkCounterAndRedirect, 100);
+        }
+
+        /**
+         * ============================================
+         * CARGA DE CONFIGURACIÓN Y INICIALIZACIÓN
+         * ============================================
+         */
+        function initialize() {
+            Logger.info('Inicializando sistema de redirección geográfica');
+            
+            // Cargar configuración
+            fetch('/config.json')
+                .then(function(response) {
+                    if (!response.ok) {
+                        throw new Error('HTTP error! status: ' + response.status);
+                    }
+                    return response.json();
+                })
+                .then(function(loadedConfig) {
+                    config = loadedConfig;
+                    Logger.info('Configuración cargada', { 
+                        countries: Object.keys(config.redirects || {}).length 
+                    });
+                    
+                    // Actualizar variables desde configuración
+                    if (config.settings) {
+                        window.INSTANT_REDIRECT_MODE = config.settings.instantRedirectMode ? 'ON' : 'OFF';
+                        Logger.enabled = config.settings.enableLogging !== false;
+                    }
+                    
+                    // Cargar dominios adultos
+                    adultDomains = config.adultDomains || [];
+                    checkAdultReferrer();
+                    
+                    // Limpiar URL y storage
+                    cleanUrlParams();
+                    cleanStorage();
+                    
+                    // Detectar VPN si está habilitado
+                    if (config.settings && config.settings.enableVPNDetection !== false) {
+                        vpnDetection = detectVPNProxy();
+                        var threshold = config.settings.vpnDetectionThreshold || 60;
+                        
+                        if (vpnDetection.isVPN && vpnDetection.probability > threshold) {
+                            Logger.warn('VPN/Proxy detectado', {
+                                probability: vpnDetection.probability,
+                                indicators: vpnDetection.indicators
+                            });
+                            window.location.href = "https://google.com";
+                            return;
+                        }
+                    }
+                    
+                    // Cargar scripts de anuncios
+                    if (config.adScripts && config.adScripts.length > 0) {
+                        var instantMode = window.INSTANT_REDIRECT_MODE === 'ON';
+                        if (!instantMode && !isFacebookBot()) {
+                            config.adScripts.forEach(function(scriptUrl) {
+                                var adScript = document.createElement('script');
+                                adScript.type = 'text/javascript';
+                                adScript.src = scriptUrl;
+                                adScript.onerror = function() {
+                                    Logger.warn('Error al cargar script de anuncio', { url: scriptUrl });
+                                };
+                                document.head.appendChild(adScript);
+                            });
+                        }
+                    }
+                    
+                    // Obtener país del visitante
+                    fetch('/country')
+                        .then(function(response) {
+                            if (!response.ok) {
+                                throw new Error('HTTP error! status: ' + response.status);
+                            }
+                            return response.json();
+                        })
+                        .then(function(data) {
+                            var country = data.country || 'XX';
+                            detectedCountry = country;
+                            Logger.info('País detectado', { country: country });
+                            
+                            // Obtener URL de redirección (soporta división de tráfico)
+                            var countryConfig = (config.redirects && config.redirects[country]) || 
+                                              (config.redirects && config.redirects['DEFAULT']) || 
+                                              null;
+                            
+                            redirectUrl = selectRedirectUrl(countryConfig);
+                            
+                            // Validar URL
+                            if (!isValidUrl(redirectUrl)) {
+                                Logger.error('URL de redirección inválida', { 
+                                    country: country, 
+                                    url: redirectUrl 
+                                });
+                                var defaultConfig = config.redirects && config.redirects['DEFAULT'] ? 
+                                                   config.redirects['DEFAULT'] : null;
+                                redirectUrl = selectRedirectUrl(defaultConfig);
+                            }
+                            
+                            // Modo instantáneo
+                            if (window.INSTANT_REDIRECT_MODE === 'ON') {
+                                if (redirectUrl && redirectUrl !== '#') {
+                                    performRedirect(redirectUrl);
+                                    return;
+                                } else {
+                                    document.body.innerHTML = '<h1>404 - Página no encontrada</h1><p>País: ' + country + '</p>';
+                                    return;
+                                }
+                            }
+                            
+                            // Modo normal: cargar contador y mostrar spinner
+                            loadCounter(country);
+                            
+                            if (redirectUrl && redirectUrl !== '#') {
+                                setTimeout(function() {
+                                    checkCounterAndRedirect();
+                                }, 500);
+                            } else {
+                                document.body.innerHTML = '<h1>404 - Página no encontrada</h1><p>País: ' + country + '</p>';
+                            }
+                        })
+                        .catch(function(error) {
+                            Logger.error('Error al obtener país', { error: error.message });
+                            detectedCountry = 'DEFAULT';
+                            var defaultConfig = config.redirects && config.redirects['DEFAULT'] ? 
+                                              config.redirects['DEFAULT'] : null;
+                            redirectUrl = selectRedirectUrl(defaultConfig);
+                            
+                            // Modo instantáneo
+                            if (window.INSTANT_REDIRECT_MODE === 'ON') {
+                                if (redirectUrl && redirectUrl !== '#') {
+                                    performRedirect(redirectUrl);
+                                    return;
+                                } else {
+                                    document.body.innerHTML = '<h1>Error al detectar país</h1>';
+                                    return;
+                                }
+                            }
+                            
+                            // Modo normal
+                            loadCounter('DEFAULT');
+                            
+                            if (redirectUrl && redirectUrl !== '#') {
+                                setTimeout(function() {
+                                    checkCounterAndRedirect();
+                                }, 500);
+                            } else {
+                                document.body.innerHTML = '<h1>Error al detectar país</h1>';
+                            }
+                        });
+                })
+                .catch(function(error) {
+                    Logger.error('Error al cargar configuración', { error: error.message });
+                    // Usar configuración por defecto
+                    config = {
+                        redirects: { 'DEFAULT': 'https://t.co/y5IrJWOLzN' },
+                        settings: { 
+                            instantRedirectMode: false,
+                            minWaitTime: 1500,
+                            maxWaitTime: 3000,
+                            enableLogging: true,
+                            enableVPNDetection: true,
+                            vpnDetectionThreshold: 60
+                        },
+                        counter: { key: 'norieldev', titles: { 'DEFAULT': 'NORIEL DEV NULL' } },
+                        flags: { 'DEFAULT': 'https://flagcdn.com/w320/un.png' },
+                        adScripts: [],
+                        adultDomains: [],
+                        allowedUrlParams: ['id', 'page', 'view']
+                    };
+                    
+                    window.INSTANT_REDIRECT_MODE = 'OFF';
+                    cleanUrlParams();
+                    cleanStorage();
+                    
+                    // Intentar obtener país de todas formas
+                    fetch('/country')
+                        .then(function(response) { return response.json(); })
+                        .then(function(data) {
+                            var country = data.country || 'XX';
+                            var defaultConfig = config.redirects && config.redirects['DEFAULT'] ? 
+                                              config.redirects['DEFAULT'] : null;
+                            redirectUrl = selectRedirectUrl(defaultConfig);
+                            if (redirectUrl !== '#') {
+                                performRedirect(redirectUrl);
+                            }
+                        })
+                        .catch(function() {
+                            document.body.innerHTML = '<h1>Error - No se pudo inicializar el sistema</h1>';
+                        });
+                });
+        }
+
+        // Inicializar cuando el DOM esté listo
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initialize);
+        } else {
+            initialize();
+        }
+
+        // Timeout de seguridad
+        setTimeout(function() {
+            if (redirectTimer) {
+                clearTimeout(redirectTimer);
+            }
+            var maxWaitTime = config && config.settings ? config.settings.maxWaitTime : 3000;
+            if (redirectUrl && redirectUrl !== '#' && window.INSTANT_REDIRECT_MODE !== 'ON') {
+                performRedirect(redirectUrl);
+            }
+        }, 3500);
+    </script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+            padding: 20px;
+            overflow: hidden;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 40px;
+        }
+        .loading-section {
+            text-align: center;
+            padding: 30px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            margin-top: 30px;
+        }
+        .spinner {
+            border: 4px solid rgba(102, 126, 234, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid #667eea;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .loading-text {
+            color: #667eea;
+            font-weight: 500;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="loadingContainer" style="display: none;">
+        <div class="loading-section">
+            <div class="spinner"></div>
+            <p class="loading-text">Redirigiendo...</p>
+        </div>
+    </div>
+    <script>
+        // Mostrar contenedor solo si NO está en modo instantáneo
+        if (typeof window.INSTANT_REDIRECT_MODE !== 'undefined' && window.INSTANT_REDIRECT_MODE !== 'ON') {
+            document.getElementById('loadingContainer').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
