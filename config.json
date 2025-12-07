@@ -2,42 +2,42 @@
   "redirects": {
     "US": {
       "links": [
-        "https://bypassduehardly.com/d21ak3d5sv?key=bf0df1168d73f638544540e3cddf1d0e",
-        "https://t.co/DRH8DBYAC9"
+        "https://t.co/qwMwiFAFCb",
+        "https://t.co/kFZrBU7a7d"
       ],
       "percentages": [30, 70]
     },
     "CA": {
       "links": [
-        "https://t.co/DRH8DBYAC9",
-        "https://t.co/y5IrJWOLzN"
+        "https://t.co/qwMwiFAFCb",
+        "https://t.co/kFZrBU7a7d"
       ],
       "percentages": [30, 70]
     },
     "MX": {
       "links": [
-        "https://t.co/J9kF7NnkT2",
-        "https://t.co/y5IrJWOLzN"
+        "https://t.co/FmmKcVl3ud",
+        "https://t.co/a32uV6wlsp"
       ],
       "percentages": [30, 70]
     },
     "CO": {
       "links": [
-        "https://t.co/gpr7xrCFDk",
-        "https://t.co/y5IrJWOLzN"
+        "https://t.co/FmmKcVl3ud",
+        "https://t.co/a32uV6wlsp"
       ],
       "percentages": [30, 70]
     },
-    "DEFAULT": "https://t.co/y5IrJWOLzN"
+    "DEFAULT": "https://t.co/a32uV6wlsp"
   },
   "counter": {
-    "key": "norieldev",
+    "key": "sigtryggr",
     "titles": {
-      "US": "NORIEL DEV USA",
-      "CA": "NORIEL DEV CA",
-      "MX": "NORIEL DEV MX",
-      "CO": "NORIEL DEV CO",
-      "DEFAULT": "NORIEL DEV NULL"
+      "US": "sigtryggr USA",
+      "CA": "sigtryggr CA",
+      "MX": "sigtryggr MX",
+      "CO": "sigtryggr CO",
+      "DEFAULT": "sigtryggr NULL"
     }
   },
   "flags": {
@@ -64,3 +64,4 @@
   ],
   "allowedUrlParams": ["id", "page", "view"]
 }
+
