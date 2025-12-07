@@ -1,2 +1,0 @@
-# sigtryggr
-GEOIP
